@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Color-Shift Physics: Chrono Jump | Cyberpunk Neon Arcade</title>
+  <meta name="description" content="Color-Shift Physics: Chrono Jump - Cyberpunk neon brauzer o'yini. Ranglar fizikasi va vaqtni sekinlashtirish mexanikasi bilan balandlikka sakrang!">
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><circle cx=%2250%22 cy=%2250%22 r=%2245%22 fill=%22%2300f3ff%22/></svg>">
+</head>
+<body>
+  <div class="cyber-background"></div>
+
+  <main class="game-viewport" id="viewport">
+    <div class="scanlines"></div>
+    <div class="chrono-active-overlay" id="chronoOverlay"></div>
+
+    <!-- HUD (Heads-Up Display) -->
+    <header class="hud">
+      <div class="hud-left">
+        <div class="score-badge">
+          <span id="scoreVal">0</span>
+          <span class="score-unit">M</span>
+        </div>
+        <div class="high-score-badge">
+          BEST: <span id="highScoreVal">0</span>
+        </div>
+      </div>
+
+      <!-- Color Shift Circular HUD Widget -->
+      <div class="hud-center">
+        <div class="shift-widget">
+          <svg class="shift-svg" viewBox="0 0 60 60">
+            <circle class="shift-track" cx="30" cy="30" r="25" />
+            <circle class="shift-progress" id="shiftProgressRing" cx="30" cy="30" r="25" />
+          </svg>
+          <div class="shift-core" id="shiftCore">SYNC</div>
+        </div>
+        <div class="shift-label" id="shiftLabel">CYAN PHASE</div>
+      </div>
+
+      <div class="hud-right">
+        <div class="combo-tag" id="comboTag">x1 COMBO</div>
+        <div class="icon-btn-group hud-interactive">
+          <button class="cyber-icon-btn" id="soundBtn" title="Ovozni yoqish/o'chirish" aria-label="Toggle Sound">
+            <svg id="soundIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+              <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+            </svg>
+          </button>
+          <button class="cyber-icon-btn" id="leaderboardBtn" title="Reyting jadvali" aria-label="Leaderboard">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path>
+              <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path>
+              <path d="M4 22h16"></path>
+              <path d="M10 14.66V17c0 .55-.45 1-1 1H7c-.55 0-1-.45-1-1v-2.34"></path>
+              <path d="M18 14.66V17c0 .55-.45 1-1 1h-2c-.55 0-1-.45-1-1v-2.34"></path>
+              <path d="M12 2v20"></path>
+              <path d="M7 6h10v8a5 5 0 0 1-10 0V6z"></path>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Chrono Energy Gauge -->
+    <div class="chrono-gauge-container">
+      <div class="chrono-gauge-header">
+        <span class="chrono-title">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <circle cx="12" cy="12" r="10"></circle>
+            <polyline points="12 6 12 12 16 14"></polyline>
+          </svg>
+          CHRONO DILATION (SLOW-MO)
+        </span>
+        <span class="chrono-prompt" id="chronoPrompt">[SPACE] TO SLOW</span>
+      </div>
+      <div class="chrono-bar-track">
+        <div class="chrono-bar-fill" id="chronoBarFill"></div>
+      </div>
+    </div>
+
+    <!-- Mobile Touch Controls -->
+    <div class="mobile-controls">
+      <div class="mobile-dpad">
+        <button class="mobile-btn" id="btnLeft" aria-label="Move Left">&#8592;</button>
+        <button class="mobile-btn" id="btnRight" aria-label="Move Right">&#8594;</button>
+      </div>
+      <button class="mobile-chrono-btn" id="btnMobileChrono" aria-label="Slow Time">
+        <span>SLOW</span>
+        <small>HOLD</small>
+      </button>
+    </div>
+
+    <!-- Canvas -->
+    <canvas id="gameCanvas" width="480" height="800"></canvas>
+
+    <!-- Start Overlay Screen -->
+    <div class="overlay-screen" id="startScreen">
+      <div class="screen-card">
+        <div class="game-title">
+          <span class="title-main">COLOR-SHIFT</span>
+          <span class="title-sub">CHRONO JUMP</span>
+        </div>
+
+        <div class="game-guide">
+          <div class="guide-item">
+            <div class="guide-icon">&#128065;</div>
+            <div><strong>Ranglar Sinxronligi:</strong> Faqat AKTIV neon rangdagi platformalarga sakrang. Boshqa ranglar xavfli!</div>
+          </div>
+          <div class="guide-item">
+            <div class="guide-icon">&#9201;</div>
+            <div><strong>Chrono Mexanikasi:</strong> <code>SPACE</code> tugmasini bosib turing — vaqt 50% ga sekinlashadi va qiyin joydan o'tish osonlashadi.</div>
+          </div>
+          <div class="guide-item">
+            <div class="guide-icon">&#127918;</div>
+            <div><strong>Boshqaruv:</strong> <code>A / D</code> yoki <code>&#8592; / &#8594;</code> (mobil ekranda tugmalar).</div>
+          </div>
+        </div>
+
+        <button class="cyber-btn" id="btnStartGame">BOSHLASH (START)</button>
+      </div>
+    </div>
+
+    <!-- Game Over Screen -->
+    <div class="overlay-screen hidden" id="gameOverScreen">
+      <div class="screen-card">
+        <div class="game-title">
+          <span class="title-main" style="background: linear-gradient(135deg, #ff0055, #ff007f); -webkit-background-clip: text;">DESYNC COLLAPSE</span>
+          <span class="title-sub" id="deathReason">NOTO'G'RI RANGGA TEGDI</span>
+        </div>
+
+        <div class="stats-grid">
+          <div class="stat-box highlight">
+            <span class="stat-label">Yakuniy Ball</span>
+            <span class="stat-val cyan" id="finalScoreVal">0</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-label">Balandlik</span>
+            <span class="stat-val" id="finalHeightVal">0m</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-label">Maks Combo</span>
+            <span class="stat-val magenta" id="finalComboVal">x1</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-label">Platformalar</span>
+            <span class="stat-val" id="finalPlatformsVal">0</span>
+          </div>
+        </div>
+
+        <!-- Global Leaderboard Submission -->
+        <div class="name-input-row">
+          <input type="text" id="playerNameInput" class="cyber-input" placeholder="Ismingiz (CyberTag)" maxlength="14" value="CyberRunner">
+          <button class="cyber-btn submit-btn" id="btnSubmitScore">SAQLASH</button>
+        </div>
+
+        <button class="cyber-btn" id="btnRestartGame">QAYTA O'YNASH (RETRY)</button>
+        <button class="cyber-btn cyber-btn-secondary" id="btnViewLeaderboardFromDeath">REYTINGNI KO'RISH</button>
+      </div>
+    </div>
+
+    <!-- Leaderboard Modal Screen -->
+    <div class="overlay-screen hidden" id="leaderboardScreen">
+      <div class="screen-card">
+        <div class="game-title">
+          <span class="title-main">GLOBAL REYTING</span>
+          <span class="title-sub">TOP CHRONO RUNNERS</span>
+        </div>
+
+        <div class="leaderboard-list" id="leaderboardList">
+          <div style="text-align:center; padding: 20px; color:#8a99ad;">Yuklanmoqda...</div>
+        </div>
+
+        <button class="cyber-btn cyber-btn-secondary" id="btnCloseLeaderboard">YOPISH</button>
+      </div>
+    </div>
+
+  </main>
+
+  <script src="audio.js"></script>
+  <script src="supabase.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>
